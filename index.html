@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>團拆選隊系統</title>
+  <script>
+    const url = 'https://script.google.com/macros/s/AKfycbwO-BfWUzDWZtp2AMMd0A1D3x7LsuwLuTug2I8xXRmWxnX2RGk2YNMdADQ3Wa9KNhWk/exec';
+
+    async function loadTeams() {
+      const res = await fetch(url);
+      const data = await res.json();
+      const container = document.getElementById('teams');
+      container.innerHTML = '';
+
+      data.teams.forEach(team => {
+        const label = document.createElement('label');
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'team';
+        radio.value = team.name;
+        radio.disabled = !team.available;
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(' ' + team.name + (team.available ? '' : '（已售出）')));
+        container.appendChild(label);
+        container.appendChild(document.createElement('br'));
+      });
+    }
+
+    async function submitForm() {
+      const name = document.getElementById('name').value.trim();
+      const team = document.querySelector('input[name="team"]:checked');
+
+      if (!name || !team) {
+        alert('請輸入姓名並選擇隊伍');
+        return;
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, team: team.value })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert('選隊成功！您選擇的是：' + team.value);
+        await loadTeams(); // 更新畫面隊伍狀態
+      } else {
+        alert('搶隊失敗，隊伍已被選走');
+        await loadTeams();
+      }
+    }
+
+    window.onload = loadTeams;
+  </script>
+</head>
+<body>
+  <h2>球員卡團拆選隊系統</h2>
+  <label>姓名：<input type="text" id="name"></label><br><br>
+  <div id="teams">載入中...</div><br>
+  <button onclick="submitForm()">提交</button>
+</body>
+</html>
